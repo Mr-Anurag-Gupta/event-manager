@@ -1,7 +1,7 @@
-import { json } from "react-router-dom";
+import { defer, json } from "react-router-dom";
 
 class Loaders {
-  async eventsPageLoader({ request, params }) {
+  async eventsPageLoader() {
     const response = await fetch("http://localhost:8080/events");
 
     if (!response.ok) {
@@ -19,12 +19,14 @@ class Loaders {
       );
     }
 
-    // const { events } = await response.json();
+    const { events } = await response.json();
+    return events;
     // return new Response(JSON.stringify(events), {
     //   status: response.status,
     //   headers: { "Content-Type": "application/json; utf-8" },
     // });
-    return response;
+    // Or
+    // return response;
   }
 
   async eventDetailPageLoader({ request, params }) {
@@ -63,3 +65,7 @@ class Loaders {
 
 const loaders = new Loaders();
 export default loaders;
+
+export async function deferredEventsPageLoader() {
+  return defer({ events: loaders.eventsPageLoader() });
+}
