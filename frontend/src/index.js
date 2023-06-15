@@ -1,6 +1,10 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import { RouterProvider, createBrowserRouter } from "react-router-dom";
+import {
+  RouterProvider,
+  createBrowserRouter,
+  redirect,
+} from "react-router-dom";
 
 import "./index.css";
 import App from "./App";
@@ -14,12 +18,24 @@ import loaders, { deferredEventsPageLoader } from "./utils/loaders";
 import ErrorPage from "./pages/ErrorPage";
 import Actions from "./utils/actions";
 import NewsletterPage from "./pages/NewsletterPage";
+import AuthenticationPage from "./pages/AuthenticationPage";
+import localStorageService from "./services/LocalStorageService";
 
 const router = createBrowserRouter([
   {
     path: "",
+    id: "root",
     element: <App />,
     errorElement: <ErrorPage />,
+    loader: () => {
+      const token = localStorageService.load("token");
+
+      if (!token) {
+        return redirect("/auth");
+      }
+
+      return null;
+    },
     children: [
       { index: true, element: <HomePage /> },
       {
@@ -56,9 +72,18 @@ const router = createBrowserRouter([
         ],
       },
       {
+        path: "auth",
+        element: <AuthenticationPage />,
+        action: Actions.loginOrSignup,
+      },
+      {
         path: "newsletter",
         element: <NewsletterPage />,
         action: Actions.signUpNewsletter,
+      },
+      {
+        path: "logout",
+        action: Actions.logout,
       },
     ],
   },

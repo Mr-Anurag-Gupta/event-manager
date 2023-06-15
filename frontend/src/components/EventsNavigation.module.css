@@ -18,7 +18,10 @@
 }
 
 .list a:hover,
-.list a:active,
-.list a.active {
+.list a:active {
+  background-color: var(--color-primary-600);
+}
+
+.list .active {
   background-color: var(--color-primary-600);
 }

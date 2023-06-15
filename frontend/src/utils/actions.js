@@ -1,4 +1,6 @@
 import { json, redirect } from "react-router-dom";
+import localStorageService from "../services/LocalStorageService";
+import urlService from "../services/URLService";
 
 export default class Actions {
   static async createOrUpdateEvent({ request, params }) {
@@ -11,22 +13,21 @@ export default class Actions {
       description: formData.get("description"),
     };
 
-    let url = "http://localhost:8080/events";
+    let url = urlService.getEventsUrl();
     if (request.method.toLowerCase() === "patch") {
-      url = `http://localhost:8080/events/${params.eventId}`;
-      console.log(`URL: ${url}`);
+      url = `${url}/${params.eventId}`;
     }
 
-    console.log(`method: ${params.eventId}`);
     let res = await fetch(url, {
       method: request.method,
       body: JSON.stringify(event),
       headers: {
         "Content-Type": "application/json",
+        authorization: "Bearer " + localStorageService.load("token"),
       },
     });
 
-    if (!res.ok) throw res; // can send custom data using json() utility
+    if (!res.ok) throw res;
 
     if (res.status === 422) {
       return res;
@@ -36,8 +37,12 @@ export default class Actions {
   }
 
   static async deleteEvent({ request, params }) {
-    let res = await fetch(`http://localhost:8080/events/${params.eventId}`, {
+    let url = `${urlService.getEventsUrl()}/${params.eventId}`;
+    let res = await fetch(url, {
       method: request.method,
+      headers: {
+        authorization: "Bearer " + localStorageService.load("token"),
+      },
     });
 
     if (!res.ok) {
@@ -54,5 +59,46 @@ export default class Actions {
     // send to backend newsletter server ...
     console.log(email);
     return { message: "Signup successful!" };
+  }
+
+  static async loginOrSignup({ request }) {
+    const searchParams = new URL(request.url).searchParams;
+    const mode = searchParams.get("mode") || "login";
+    if (mode !== "login" && mode !== "signup") {
+      throw json({ message: "Unsupported mode." }, { status: 422 });
+    }
+
+    let formData = await request.formData();
+    let user = {
+      email: formData.get("email"),
+      password: formData.get("password"),
+    };
+
+    let url = urlService.getBaseUrl() + mode;
+    let res = await fetch(url, {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify(user),
+    });
+
+    if (res.status === 422 || res.status === 401) {
+      return res;
+    }
+
+    if (!res.ok) {
+      throw json({ message: "Could not authenticate user" }, { status: 500 });
+    }
+
+    let token = (await res.json()).token;
+    localStorageService.save("token", token);
+
+    return redirect("/");
+  }
+
+  static async logout() {
+    localStorageService.remove("token");
+    return redirect("/");
   }
 }
