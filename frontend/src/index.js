@@ -1,11 +1,6 @@
 import React from "react";
 import ReactDOM from "react-dom/client";
-import {
-  RouterProvider,
-  createBrowserRouter,
-  redirect,
-} from "react-router-dom";
-
+import { RouterProvider, createBrowserRouter } from "react-router-dom";
 import "./index.css";
 import App from "./App";
 import HomePage from "./pages/HomePage";
@@ -14,12 +9,11 @@ import EventDetailPage from "./pages/EventsDetailPage";
 import NewEventPage from "./pages/NewEventPage";
 import EditEventPage from "./pages/EditEventPage";
 import EventsLayout from "./layouts/EventsLayout";
-import loaders, { deferredEventsPageLoader } from "./utils/loaders";
+import loaders, { deferredEventsPageLoader } from "./utils/Loaders";
 import ErrorPage from "./pages/ErrorPage";
-import Actions from "./utils/actions";
+import Actions from "./utils/Actions";
 import NewsletterPage from "./pages/NewsletterPage";
 import AuthenticationPage from "./pages/AuthenticationPage";
-import localStorageService from "./services/LocalStorageService";
 
 const router = createBrowserRouter([
   {
@@ -27,15 +21,7 @@ const router = createBrowserRouter([
     id: "root",
     element: <App />,
     errorElement: <ErrorPage />,
-    loader: () => {
-      const token = localStorageService.load("token");
-
-      if (!token) {
-        return redirect("/auth");
-      }
-
-      return null;
-    },
+    loader: loaders.tokenLoader,
     children: [
       { index: true, element: <HomePage /> },
       {
@@ -60,6 +46,7 @@ const router = createBrowserRouter([
               {
                 path: "edit",
                 element: <EditEventPage />,
+                loader: loaders.checkAuthLoader,
                 action: Actions.createOrUpdateEvent,
               },
             ],
@@ -67,6 +54,7 @@ const router = createBrowserRouter([
           {
             path: "new",
             element: <NewEventPage />,
+            loader: loaders.checkAuthLoader,
             action: Actions.createOrUpdateEvent,
           },
         ],

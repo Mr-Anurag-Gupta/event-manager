@@ -94,11 +94,16 @@ export default class Actions {
     let token = (await res.json()).token;
     localStorageService.save("token", token);
 
+    let expiration = new Date();
+    expiration.setHours(expiration.getHours() + 1);
+    localStorageService.save("expiration", expiration.toISOString());
+
     return redirect("/");
   }
 
   static async logout() {
     localStorageService.remove("token");
+    localStorageService.remove("expiration");
     return redirect("/");
   }
 }
